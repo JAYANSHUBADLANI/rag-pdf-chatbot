@@ -232,31 +232,3 @@ def query_rag(
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Streaming variant (for Streamlit st.write_stream)
-# ─────────────────────────────────────────────────────────────────────────────
-
-def build_streaming_llm(
-    model: str       = CLAUDE_MODEL,
-    temperature: float = TEMPERATURE,
-    max_tokens: int  = MAX_TOKENS,
-) -> ChatAnthropic:
-    """
-    Return a streaming-capable Claude LLM for use with Streamlit's
-    ``st.write_stream``.  Usage::
-
-        llm = build_streaming_llm()
-        for chunk in llm.stream(messages):
-            print(chunk.content, end="", flush=True)
-    """
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
-    if not api_key or api_key.startswith("your_"):
-        raise ValueError("ANTHROPIC_API_KEY is not set.")
-
-    return ChatAnthropic(
-        model             = model,
-        temperature       = temperature,
-        max_tokens        = max_tokens,
-        anthropic_api_key = api_key,
-        streaming         = True,
-    )
