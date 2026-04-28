@@ -122,7 +122,7 @@ def _process_and_index(pdf_bytes: bytes, filename: str) -> None:
 
         st.session_state.vectorstore   = vs
         st.session_state.embeddings    = emb
-        st.session_state.rag_chain     = build_rag_chain(vs)
+        st.session_state.rag_chain     = None   # built lazily on first query
         st.session_state.uploaded_name = filename
         st.session_state.messages      = []   # fresh chat for new document
 
@@ -236,11 +236,11 @@ for msg in st.session_state.messages:
 # ── Chat input ──
 placeholder = (
     "Ask a question about your PDF…"
-    if st.session_state.rag_chain
+    if st.session_state.vectorstore
     else "Upload a PDF in the sidebar first…"
 )
 
-if prompt := st.chat_input(placeholder, disabled=st.session_state.rag_chain is None):
+if prompt := st.chat_input(placeholder, disabled=st.session_state.vectorstore is None):
     # ── Append and display user message ──
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -251,6 +251,9 @@ if prompt := st.chat_input(placeholder, disabled=st.session_state.rag_chain is N
         with st.spinner("Thinking…"):
             t0 = time.time()
             try:
+                # Build chain lazily on first query (requires API key)
+                if st.session_state.rag_chain is None:
+                    st.session_state.rag_chain = build_rag_chain(st.session_state.vectorstore)
                 result = query_rag(st.session_state.rag_chain, prompt)
                 elapsed = round(time.time() - t0, 1)
 

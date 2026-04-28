@@ -3,6 +3,8 @@ rag_chain.py
 ────────────
 LangChain RAG pipeline using Claude claude-opus-4-6 as the LLM.
 
+Built with LangChain Expression Language (LCEL) — compatible with LangChain ≥ 1.0.
+
 Flow:
     user query
         → FAISS retriever (top-k chunks)
@@ -22,9 +24,10 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-from langchain.schema import Document
+from langchain_core.prompts import PromptTemplate
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_community.vectorstores import FAISS
 
 load_dotenv()
@@ -64,7 +67,7 @@ QUESTION:
 ANSWER:"""
 
 RAG_PROMPT = PromptTemplate(
-    template       = RAG_PROMPT_TEMPLATE,
+    template        = RAG_PROMPT_TEMPLATE,
     input_variables = ["context", "question"],
 )
 
@@ -74,28 +77,15 @@ RAG_PROMPT = PromptTemplate(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_llm(
-    model: str       = CLAUDE_MODEL,
+    model: str         = CLAUDE_MODEL,
     temperature: float = TEMPERATURE,
-    max_tokens: int  = MAX_TOKENS,
+    max_tokens: int    = MAX_TOKENS,
 ) -> ChatAnthropic:
     """
     Instantiate and return a Claude LLM via the Anthropic API.
 
     The API key is read from the ``ANTHROPIC_API_KEY`` environment variable
     (populated by ``python-dotenv`` from ``.env``).
-
-    Parameters
-    ----------
-    model : str
-        Claude model identifier (default ``"claude-opus-4-6"``).
-    temperature : float
-        Sampling temperature — lower = more deterministic.
-    max_tokens : int
-        Maximum tokens in the model's response.
-
-    Returns
-    -------
-    ChatAnthropic
 
     Raises
     ------
@@ -113,11 +103,25 @@ def get_llm(
                 model, temperature, max_tokens)
 
     return ChatAnthropic(
-        model        = model,
-        temperature  = temperature,
-        max_tokens   = max_tokens,
+        model             = model,
+        temperature       = temperature,
+        max_tokens        = max_tokens,
         anthropic_api_key = api_key,
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _format_docs(docs: List[Document]) -> str:
+    """Concatenate page content from retrieved chunks into a single context string."""
+    parts = []
+    for doc in docs:
+        label = doc.metadata.get("page_label", "")
+        prefix = f"[{label}] " if label else ""
+        parts.append(prefix + doc.page_content)
+    return "\n\n---\n\n".join(parts)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -130,15 +134,15 @@ def build_rag_chain(
     model: str         = CLAUDE_MODEL,
     temperature: float = TEMPERATURE,
     max_tokens: int    = MAX_TOKENS,
-) -> RetrievalQA:
+) -> Any:
     """
-    Build and return a LangChain ``RetrievalQA`` chain.
+    Build and return an LCEL RAG chain.
 
-    The chain:
-        1. Retrieves the top-k most relevant chunks from ``vectorstore``.
-        2. Injects them into :data:`RAG_PROMPT`.
-        3. Sends the filled prompt to Claude.
-        4. Returns the answer string **and** the source documents.
+    The chain retrieves the top-k most relevant chunks from ``vectorstore``,
+    formats them into the prompt, and sends it to Claude.
+
+    Returns a callable that accepts ``{"question": str}`` and returns
+    ``{"answer": str, "source_documents": List[Document]}``.
 
     Parameters
     ----------
@@ -152,10 +156,6 @@ def build_rag_chain(
         Sampling temperature.
     max_tokens : int
         Max tokens in Claude's response.
-
-    Returns
-    -------
-    RetrievalQA
     """
     llm       = get_llm(model=model, temperature=temperature, max_tokens=max_tokens)
     retriever = vectorstore.as_retriever(
@@ -163,16 +163,20 @@ def build_rag_chain(
         search_kwargs = {"k": top_k},
     )
 
-    chain = RetrievalQA.from_chain_type(
-        llm              = llm,
-        chain_type       = "stuff",          # concatenate all chunks into one prompt
-        retriever        = retriever,
-        return_source_documents = True,      # include source chunks in result
-        chain_type_kwargs = {"prompt": RAG_PROMPT},
+    # LCEL chain: retrieve → format → prompt → LLM → parse
+    chain = (
+        RunnablePassthrough.assign(
+            context  = (lambda x: x["question"]) | retriever | _format_docs,
+            _docs    = (lambda x: x["question"]) | retriever,
+        )
+        | {
+            "answer":           RAG_PROMPT | llm | StrOutputParser(),
+            "source_documents": RunnableLambda(lambda x: x.get("_docs", [])),
+        }
     )
 
     logger.info("RAG chain built (model=%s, top_k=%d).", model, top_k)
-    return chain
+    return chain, retriever
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -180,7 +184,7 @@ def build_rag_chain(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def query_rag(
-    chain: RetrievalQA,
+    chain_tuple: Any,
     question: str,
 ) -> Dict[str, Any]:
     """
@@ -188,8 +192,8 @@ def query_rag(
 
     Parameters
     ----------
-    chain : RetrievalQA
-        Built chain from :func:`build_rag_chain`.
+    chain_tuple : tuple
+        Output of :func:`build_rag_chain` — (chain, retriever).
     question : str
         Natural-language question about the document.
 
@@ -204,11 +208,16 @@ def query_rag(
     if not question.strip():
         raise ValueError("Question must not be empty.")
 
-    logger.info("RAG query: %r", question[:80])
-    result = chain.invoke({"query": question})
+    chain, retriever = chain_tuple
 
-    answer        = result.get("result", "").strip()
-    source_docs: List[Document] = result.get("source_documents", [])
+    logger.info("RAG query: %r", question[:80])
+
+    # Retrieve source docs separately for transparency
+    source_docs: List[Document] = retriever.invoke(question)
+
+    # Run the answer chain
+    result = chain.invoke({"question": question})
+    answer = result.get("answer", "").strip()
 
     # Deduplicate page labels
     seen_pages: set = set()
@@ -225,10 +234,8 @@ def query_rag(
     )
 
     return {
-        "question":     question,
-        "answer":       answer,
+        "question":      question,
+        "answer":        answer,
         "source_chunks": source_docs,
         "source_pages":  source_pages,
     }
-
-

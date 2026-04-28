@@ -14,25 +14,18 @@ A production-ready **Retrieval-Augmented Generation (RAG)** chatbot that lets yo
 
 ## 📸 Screenshot
 
-> _Run the app locally and replace this section with your screenshot._
->
-> ```
-> assets/screenshot.png  ← place your screenshot here
-> ```
+![RAG PDF Chatbot — PDF indexed and ready](assets/screenshot.png)
 
 ---
 
-## 🎬 Demo GIF
+## 🎬 Demo
 
-To record a demo GIF:
-1. Run the app: `streamlit run app.py`
-2. Use [Kap](https://getkap.co) (macOS) or [ScreenToGif](https://www.screentogif.com) (Windows) to record
-3. Upload the PDF → ask 2–3 questions → stop recording
-4. Save as `assets/demo.gif` and embed below:
-
-```markdown
-![Demo](assets/demo.gif)
-```
+> Record a short screen recording (upload PDF → ask questions → see sources expand)  
+> and save it as `assets/demo.gif`, then embed below:
+>
+> ```markdown
+> ![Demo](assets/demo.gif)
+> ```
 
 ---
 
