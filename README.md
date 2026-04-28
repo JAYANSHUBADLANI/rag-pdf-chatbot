@@ -8,19 +8,46 @@
 
 ## 🔍 Project Overview
 
-A production-ready **Retrieval-Augmented Generation (RAG)** chatbot that lets you upload any PDF and ask questions about it in natural language. Powered by **Claude Opus** via the Anthropic API, **FAISS** vector similarity search, and a clean **Streamlit** chat interface.
+A production-ready **Retrieval-Augmented Generation (RAG)** chatbot that lets you upload any PDF and ask questions about it in natural language. Powered by **Claude claude-opus-4-6** (Anthropic API), **FAISS** vector similarity search, and a clean dark-mode **Streamlit** chat interface.
+
+---
+
+## 📸 Screenshot
+
+> _Run the app locally and replace this section with your screenshot._
+>
+> ```
+> assets/screenshot.png  ← place your screenshot here
+> ```
+
+---
+
+## 🎬 Demo GIF
+
+To record a demo GIF:
+1. Run the app: `streamlit run app.py`
+2. Use [Kap](https://getkap.co) (macOS) or [ScreenToGif](https://www.screentogif.com) (Windows) to record
+3. Upload the PDF → ask 2–3 questions → stop recording
+4. Save as `assets/demo.gif` and embed below:
+
+```markdown
+![Demo](assets/demo.gif)
+```
 
 ---
 
 ## ✨ Features
 
-- 📄 **PDF Upload** — drag-and-drop or browse to upload any PDF
-- ✂️ **Smart Chunking** — splits documents into overlapping chunks for better context retention
-- 🧠 **Semantic Search** — FAISS vector store with sentence-transformer embeddings for fast, accurate retrieval
-- 💬 **Claude Opus LLM** — state-of-the-art language model for grounded, accurate answers
-- 📚 **Source Transparency** — every answer shows the exact source chunks used
-- 🗂️ **Chat History** — full conversation history persisted in session state
-- 💾 **Persistent Vectorstore** — FAISS index saved to disk so you don't re-index on every reload
+| Feature | Detail |
+|---------|--------|
+| 📄 PDF Upload | Drag-and-drop or browse, any PDF |
+| ✂️ Smart Chunking | RecursiveCharacterTextSplitter (1000 chars, 200 overlap) |
+| 🧠 Semantic Search | FAISS + sentence-transformers embeddings |
+| 💬 Claude Opus LLM | claude-opus-4-6 — grounded, factual answers |
+| 📚 Source Transparency | Every answer shows exact retrieved chunks + page numbers |
+| 🗂️ Chat History | Full conversation persisted in session state |
+| 💾 Persistent Index | FAISS saved to disk — no re-indexing on reload |
+| 🌑 Dark Mode UI | Clean, modern dark theme |
 
 ---
 
@@ -36,7 +63,6 @@ A production-ready **Retrieval-Augmented Generation (RAG)** chatbot that lets yo
 | Text Splitting | RecursiveCharacterTextSplitter |
 | UI | Streamlit |
 | Config | python-dotenv |
-| Tokenisation | tiktoken |
 
 ---
 
@@ -46,15 +72,17 @@ A production-ready **Retrieval-Augmented Generation (RAG)** chatbot that lets yo
 rag-pdf-chatbot/
 │
 ├── src/
-│   ├── pdf_processor.py       # PDF loading & text chunking
-│   ├── vectorstore.py         # FAISS embedding & retrieval
-│   └── rag_chain.py           # LangChain RAG pipeline with Claude
+│   ├── __init__.py
+│   ├── pdf_processor.py       # PDF loading, cleaning & chunking
+│   ├── vectorstore.py         # FAISS embedding, build/save/load, retrieval
+│   └── rag_chain.py           # LangChain RAG pipeline with Claude Opus
 │
 ├── app.py                     # Streamlit chat interface
 │
 ├── assets/
-│   ├── sample.pdf             # Sample PDF for demo
-│   └── screenshot.png         # App screenshot (add after running)
+│   ├── sample.pdf             # 8-page RAG technical overview (demo document)
+│   ├── screenshot.png         # ← add after running (optional)
+│   └── demo.gif               # ← add demo recording (optional)
 │
 ├── data/                      # Place your PDFs here (git-ignored)
 ├── vectorstore/               # FAISS index saved here (git-ignored)
@@ -91,8 +119,8 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 ```
-Open `.env` and add your Anthropic API key:
-```
+Open `.env` and paste your Anthropic API key:
+```env
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 Get a key at [console.anthropic.com](https://console.anthropic.com).
@@ -105,25 +133,46 @@ Get a key at [console.anthropic.com](https://console.anthropic.com).
 streamlit run app.py
 ```
 
-The app opens at **http://localhost:8501**.
+Opens at **http://localhost:8501**.
 
-1. Click **"Upload PDF"** and select a PDF file
-2. Wait for processing (chunking + indexing takes ~5–15 seconds)
+1. Click **"Upload PDF"** in the sidebar (or try `assets/sample.pdf`)
+2. Wait ~5–15 s for chunking + indexing
 3. Type your question in the chat input
-4. View the answer + source references below each response
+4. View the answer + expand **📚 Sources** for retrieved chunks
+
+---
+
+## ☁️ Deploy to Streamlit Cloud
+
+1. **Push to GitHub** (this repo is already set up)
+2. Go to **[share.streamlit.io](https://share.streamlit.io)** → _New app_
+3. Select:
+   - Repository: `JAYANSHUBADLANI/rag-pdf-chatbot`
+   - Branch: `main`
+   - Main file: `app.py`
+4. Under **Advanced settings → Secrets**, add:
+   ```toml
+   ANTHROPIC_API_KEY = "sk-ant-..."
+   ```
+5. Click **Deploy** — live URL in ~2 minutes
+
+> **Note on persistence:** Streamlit Cloud's free tier resets the filesystem each session.  
+> The FAISS vectorstore is rebuilt automatically on each new upload — no action needed.  
+> For production use, cache the FAISS index to S3/GCS and load it at startup.
 
 ---
 
 ## 💡 Configuration
 
-You can customise chunking and retrieval in `src/pdf_processor.py` and `src/vectorstore.py`:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `CHUNK_SIZE` | 1000 | Characters per chunk |
-| `CHUNK_OVERLAP` | 200 | Overlap between consecutive chunks |
-| `MAX_RETRIEVAL_DOCS` | 4 | Top-k chunks retrieved per query |
-| Embedding model | `all-MiniLM-L6-v2` | Swap for any HuggingFace model |
+| Parameter | Default | File | Description |
+|-----------|---------|------|-------------|
+| `CHUNK_SIZE` | 1000 | `pdf_processor.py` | Characters per chunk |
+| `CHUNK_OVERLAP` | 200 | `pdf_processor.py` | Overlap between chunks |
+| `TOP_K_RETRIEVE` | 4 | `rag_chain.py` | Chunks retrieved per query |
+| `CLAUDE_MODEL` | `claude-opus-4-6` | `rag_chain.py` | Anthropic model |
+| `TEMPERATURE` | 0.2 | `rag_chain.py` | Sampling temperature |
+| `MAX_TOKENS` | 1024 | `rag_chain.py` | Max response tokens |
+| Embedding model | `all-MiniLM-L6-v2` | `vectorstore.py` | HuggingFace model name |
 
 ---
 
