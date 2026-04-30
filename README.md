@@ -1,4 +1,4 @@
-# 🤖 RAG PDF Chatbot
+# DocMind — PDF Intelligence
 
 **Author:** Jayanshu Badlani
 **GitHub:** [JAYANSHUBADLANI](https://github.com/JAYANSHUBADLANI)
@@ -6,9 +6,9 @@
 
 ---
 
-## 🔍 Project Overview
+## Overview
 
-A production-ready **Retrieval-Augmented Generation (RAG)** chatbot that lets you upload any PDF and ask questions about it in natural language. Powered by **Claude claude-opus-4-6** (Anthropic API), **FAISS** vector similarity search, and a clean dark-mode **Streamlit** chat interface.
+A production-ready **Retrieval-Augmented Generation (RAG)** application that lets you upload any PDF and interrogate it in plain English. Powered by **Claude Opus** (Anthropic), **FAISS** vector similarity search, local **sentence-transformer** embeddings, and a clean dark-mode **Streamlit** interface.
 
 ---
 
@@ -18,14 +18,9 @@ A production-ready **Retrieval-Augmented Generation (RAG)** chatbot that lets yo
 
 ---
 
-## 🎬 Demo
+## Demo
 
-> Record a short screen recording (upload PDF → ask questions → see sources expand)  
-> and save it as `assets/demo.gif`, then embed below:
->
-> ```markdown
-> ![Demo](assets/demo.gif)
-> ```
+> Upload `assets/sample.pdf`, ask questions like *"What is FAISS?"* or *"How does chunking affect RAG quality?"* — answers cite page numbers and show retrieved source passages.
 
 ---
 
@@ -74,8 +69,7 @@ rag-pdf-chatbot/
 │
 ├── assets/
 │   ├── sample.pdf             # 8-page RAG technical overview (demo document)
-│   ├── screenshot.png         # ← add after running (optional)
-│   └── demo.gif               # ← add demo recording (optional)
+│   └── screenshot.png         # UI screenshot
 │
 ├── data/                      # Place your PDFs here (git-ignored)
 ├── vectorstore/               # FAISS index saved here (git-ignored)
