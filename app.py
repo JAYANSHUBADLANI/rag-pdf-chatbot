@@ -1,15 +1,3 @@
-"""
-app.py
-──────
-Streamlit chat interface for the RAG PDF Chatbot.
-Premium dark-mode UI — clean, minimal, professional.
-
-Author : Jayanshu Badlani
-GitHub : https://github.com/JAYANSHUBADLANI
-"""
-
-from __future__ import annotations
-
 import os
 import tempfile
 import time
@@ -19,28 +7,22 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from src.pdf_processor import process_pdf
-from src.vectorstore   import build_vectorstore, get_embeddings
-from src.rag_chain     import build_rag_chain, query_rag
+from src.vectorstore import build_vectorstore, get_embeddings
+from src.rag_chain import build_rag_chain, query_rag
 
-# ── Environment ───────────────────────────────────────────────────────────────
 load_dotenv()
 
-# ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title = "DocMind — PDF Intelligence",
-    page_icon  = "◆",
-    layout     = "wide",
-    initial_sidebar_state = "expanded",
+    page_title="DocMind — PDF Intelligence",
+    page_icon="◆",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# ── Design System ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
-/* ══════════════════════════════════
-   BASE & RESET
-══════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, .stApp {
@@ -49,13 +31,10 @@ html, body, .stApp {
     color: #d4d8e1;
 }
 
-/* Hide Streamlit chrome */
 #MainMenu, footer, header { visibility: hidden; }
 .stDeployButton { display: none !important; }
 
-/* ══════════════════════════════════
-   SIDEBAR
-══════════════════════════════════ */
+/* sidebar */
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0f1117 0%, #0b0d11 100%) !important;
     border-right: 1px solid rgba(255,255,255,0.06) !important;
@@ -66,18 +45,14 @@ section[data-testid="stSidebar"] > div:first-child {
     padding: 28px 20px !important;
 }
 
-/* ══════════════════════════════════
-   MAIN CONTENT AREA
-══════════════════════════════════ */
+/* main content */
 .main .block-container {
     max-width: 820px !important;
     padding: 0 32px 80px 32px !important;
     margin: 0 auto !important;
 }
 
-/* ══════════════════════════════════
-   WORDMARK / LOGO
-══════════════════════════════════ */
+/* wordmark */
 .wm-logo {
     display: flex;
     align-items: center;
@@ -112,9 +87,6 @@ section[data-testid="stSidebar"] > div:first-child {
     text-transform: uppercase;
 }
 
-/* ══════════════════════════════════
-   SIDEBAR SECTION LABELS
-══════════════════════════════════ */
 .sb-label {
     font-size: 10px;
     font-weight: 600;
@@ -123,10 +95,6 @@ section[data-testid="stSidebar"] > div:first-child {
     color: #3d4357;
     margin: 20px 0 8px 0;
 }
-
-/* ══════════════════════════════════
-   DOCUMENT STATUS CARD
-══════════════════════════════════ */
 .doc-card {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.07);
@@ -166,10 +134,6 @@ section[data-testid="stSidebar"] > div:first-child {
     margin-right: 5px;
     vertical-align: middle;
 }
-
-/* ══════════════════════════════════
-   API KEY WARNING
-══════════════════════════════════ */
 .api-warn {
     background: rgba(234,179,8,0.07);
     border: 1px solid rgba(234,179,8,0.18);
@@ -188,33 +152,20 @@ section[data-testid="stSidebar"] > div:first-child {
     color: #16a34a;
     line-height: 1.5;
 }
-
-/* ══════════════════════════════════
-   DIVIDER
-══════════════════════════════════ */
 .sb-divider {
     height: 1px;
     background: rgba(255,255,255,0.05);
     margin: 20px 0;
 }
-
-/* ══════════════════════════════════
-   AUTHOR CREDIT
-══════════════════════════════════ */
 .sb-author {
     font-size: 11px;
     color: #2e3347;
     line-height: 1.7;
 }
-.sb-author a {
-    color: #4b5265;
-    text-decoration: none;
-}
+.sb-author a { color: #4b5265; text-decoration: none; }
 .sb-author a:hover { color: #7c6af7; }
 
-/* ══════════════════════════════════
-   MAIN PAGE HEADER
-══════════════════════════════════ */
+/* page header */
 .page-header {
     padding: 48px 0 32px 0;
     border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -246,49 +197,25 @@ section[data-testid="stSidebar"] > div:first-child {
     margin-top: 10px;
 }
 
-/* ══════════════════════════════════
-   EMPTY / WELCOME STATE
-══════════════════════════════════ */
+/* empty state */
 .empty-state {
     text-align: center;
     padding: 80px 40px;
     color: #3d4357;
 }
-.empty-state-icon {
-    font-size: 28px;
-    margin-bottom: 16px;
-    opacity: 0.5;
-}
+.empty-state-icon { font-size: 28px; margin-bottom: 16px; opacity: 0.5; }
 .empty-state-title {
     font-size: 17px;
     font-weight: 500;
     color: #4b5265;
     margin-bottom: 8px;
 }
-.empty-state-sub {
-    font-size: 13px;
-    color: #2e3347;
-    line-height: 1.6;
-}
+.empty-state-sub { font-size: 13px; color: #2e3347; line-height: 1.6; }
 
-/* ══════════════════════════════════
-   CHAT MESSAGES
-══════════════════════════════════ */
+/* chat */
+.stChatMessage { background: transparent !important; border: none !important; padding: 0 !important; }
+[data-testid="stChatMessageContent"] { font-size: 14px; line-height: 1.7; }
 
-/* Remove Streamlit's default chat styling */
-.stChatMessage {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-}
-
-/* User message */
-[data-testid="stChatMessageContent"] {
-    font-size: 14px;
-    line-height: 1.7;
-}
-
-/* Source citation chips */
 .cite-row {
     display: flex;
     flex-wrap: wrap;
@@ -311,8 +238,6 @@ section[data-testid="stSidebar"] > div:first-child {
     letter-spacing: 0.1px;
     cursor: default;
 }
-
-/* Source drawer */
 .source-drawer {
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.06);
@@ -336,26 +261,17 @@ section[data-testid="stSidebar"] > div:first-child {
     margin-bottom: 6px;
 }
 
-/* ══════════════════════════════════
-   UPLOAD WIDGET OVERRIDES
-══════════════════════════════════ */
+/* upload widget */
 [data-testid="stFileUploader"] {
     background: rgba(255,255,255,0.02) !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
     border-radius: 10px !important;
     padding: 14px !important;
 }
-[data-testid="stFileUploader"] section {
-    border: none !important;
-    padding: 0 !important;
-}
-[data-testid="stFileUploader"] label {
-    display: none !important;
-}
+[data-testid="stFileUploader"] section { border: none !important; padding: 0 !important; }
+[data-testid="stFileUploader"] label { display: none !important; }
 
-/* ══════════════════════════════════
-   BUTTONS
-══════════════════════════════════ */
+/* buttons */
 .stButton > button {
     background: transparent !important;
     border: 1px solid rgba(255,255,255,0.1) !important;
@@ -374,9 +290,7 @@ section[data-testid="stSidebar"] > div:first-child {
     background: rgba(124,106,247,0.06) !important;
 }
 
-/* ══════════════════════════════════
-   CHAT INPUT
-══════════════════════════════════ */
+/* chat input */
 [data-testid="stChatInput"] {
     background: #0f1117 !important;
     border-top: 1px solid rgba(255,255,255,0.06) !important;
@@ -397,28 +311,18 @@ section[data-testid="stSidebar"] > div:first-child {
     outline: none !important;
 }
 
-/* ══════════════════════════════════
-   SPINNER
-══════════════════════════════════ */
 .stSpinner > div { border-top-color: #7c6af7 !important; }
 
-/* ══════════════════════════════════
-   SCROLLBAR
-══════════════════════════════════ */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2e3347; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #454d62; }
 
-/* ══════════════════════════════════
-   SUCCESS / ERROR MESSAGES
-══════════════════════════════════ */
 .stSuccess, .stInfo, .stWarning, .stError {
     font-size: 13px !important;
     border-radius: 8px !important;
 }
 
-/* Expander — sources */
 details {
     border: 1px solid rgba(255,255,255,0.06) !important;
     border-radius: 8px !important;
@@ -437,17 +341,18 @@ details > div { padding: 0 12px 12px 12px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Session state ─────────────────────────────────────────────────────────────
-if "messages"      not in st.session_state: st.session_state.messages      = []
-if "vectorstore"   not in st.session_state: st.session_state.vectorstore   = None
-if "rag_chain"     not in st.session_state: st.session_state.rag_chain     = None
-if "uploaded_name" not in st.session_state: st.session_state.uploaded_name = None
-if "chunk_count"   not in st.session_state: st.session_state.chunk_count   = 0
+# session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "vectorstore" not in st.session_state:
+    st.session_state.vectorstore = None
+if "rag_chain" not in st.session_state:
+    st.session_state.rag_chain = None
+if "uploaded_name" not in st.session_state:
+    st.session_state.uploaded_name = None
+if "chunk_count" not in st.session_state:
+    st.session_state.chunk_count = 0
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
 
 @st.cache_resource(show_spinner=False)
 def _get_embeddings():
@@ -463,24 +368,19 @@ def _process_and_index(pdf_bytes: bytes, filename: str) -> None:
             chunks = process_pdf(tmp_path)
         with st.spinner(f"Indexing {len(chunks)} passages…"):
             emb = _get_embeddings()
-            vs  = build_vectorstore(chunks, embedding_model=emb)
+            vs = build_vectorstore(chunks, embedding_model=emb)
 
-        st.session_state.vectorstore   = vs
-        st.session_state.rag_chain     = None
+        st.session_state.vectorstore = vs
+        st.session_state.rag_chain = None
         st.session_state.uploaded_name = filename
-        st.session_state.chunk_count   = len(chunks)
-        st.session_state.messages      = []
+        st.session_state.chunk_count = len(chunks)
+        st.session_state.messages = []
     finally:
         os.unlink(tmp_path)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Sidebar
-# ─────────────────────────────────────────────────────────────────────────────
-
+# sidebar
 with st.sidebar:
-
-    # Wordmark
     st.markdown("""
     <div class="wm-logo">
         <div class="wm-diamond">D</div>
@@ -491,7 +391,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # API key status
     api_key = os.getenv("ANTHROPIC_API_KEY", "")
     if not api_key or api_key.startswith("your_"):
         st.markdown(
@@ -500,26 +399,20 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
     else:
-        st.markdown(
-            '<div class="api-ok">Claude connected</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div class="api-ok">Claude connected</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-
-    # Document section
     st.markdown('<div class="sb-label">Document</div>', unsafe_allow_html=True)
 
     uploaded = st.file_uploader(
-        label            = "Upload PDF",
-        type             = ["pdf"],
-        label_visibility = "collapsed",
+        label="Upload PDF",
+        type=["pdf"],
+        label_visibility="collapsed",
     )
     if uploaded and uploaded.name != st.session_state.uploaded_name:
         _process_and_index(uploaded.read(), uploaded.name)
         st.rerun()
 
-    # Status card
     if st.session_state.uploaded_name:
         st.markdown(f"""
         <div class="doc-card">
@@ -541,16 +434,14 @@ with st.sidebar:
 
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
 
-    # Reset
     if st.button("Clear conversation", use_container_width=True):
-        st.session_state.messages      = []
-        st.session_state.vectorstore   = None
-        st.session_state.rag_chain     = None
+        st.session_state.messages = []
+        st.session_state.vectorstore = None
+        st.session_state.rag_chain = None
         st.session_state.uploaded_name = None
-        st.session_state.chunk_count   = 0
+        st.session_state.chunk_count = 0
         st.rerun()
 
-    # Author
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="sb-author">
@@ -561,10 +452,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main — Header
-# ─────────────────────────────────────────────────────────────────────────────
-
+# main header
 if st.session_state.uploaded_name:
     st.markdown(f"""
     <div class="page-header">
@@ -589,10 +477,7 @@ else:
     """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main — Chat history
-# ─────────────────────────────────────────────────────────────────────────────
-
+# chat history
 if not st.session_state.messages and not st.session_state.uploaded_name:
     st.markdown("""
     <div class="empty-state">
@@ -604,7 +489,6 @@ if not st.session_state.messages and not st.session_state.uploaded_name:
         </div>
     </div>
     """, unsafe_allow_html=True)
-
 elif not st.session_state.messages and st.session_state.uploaded_name:
     st.markdown(f"""
     <div class="empty-state">
@@ -622,22 +506,17 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
         if msg["role"] == "assistant" and msg.get("source_chunks"):
-            # Citation chips
             pages = msg.get("source_pages", [])
             if pages:
                 chips_html = "".join(
                     f'<span class="cite-chip">p. {p.replace("p.", "").strip()}</span>'
                     for p in pages
                 )
-                st.markdown(
-                    f'<div class="cite-row">{chips_html}</div>',
-                    unsafe_allow_html=True,
-                )
+                st.markdown(f'<div class="cite-row">{chips_html}</div>', unsafe_allow_html=True)
 
-            # Source passages expander
             with st.expander(f"View {len(msg['source_chunks'])} source passage(s)"):
                 for i, chunk in enumerate(msg["source_chunks"], 1):
-                    meta  = chunk.metadata
+                    meta = chunk.metadata
                     label = f"{meta.get('source','—')} · {meta.get('page_label','—')} · {meta.get('chunk_chars','?')} chars"
                     st.markdown(
                         f'<div class="source-drawer-label">Passage {i} — {label}</div>'
@@ -645,19 +524,13 @@ for msg in st.session_state.messages:
                         unsafe_allow_html=True,
                     )
                     if i < len(msg["source_chunks"]):
-                        st.markdown(
-                            '<div style="height:10px;"></div>',
-                            unsafe_allow_html=True,
-                        )
+                        st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main — Chat input
-# ─────────────────────────────────────────────────────────────────────────────
-
+# chat input
 prompt = st.chat_input(
-    placeholder = "Ask a question about your document…" if st.session_state.vectorstore else "Upload a document to begin…",
-    disabled    = st.session_state.vectorstore is None,
+    placeholder="Ask a question about your document…" if st.session_state.vectorstore else "Upload a document to begin…",
+    disabled=st.session_state.vectorstore is None,
 )
 
 if prompt:
@@ -672,30 +545,25 @@ if prompt:
                 if st.session_state.rag_chain is None:
                     st.session_state.rag_chain = build_rag_chain(st.session_state.vectorstore)
 
-                result  = query_rag(st.session_state.rag_chain, prompt)
+                result = query_rag(st.session_state.rag_chain, prompt)
                 elapsed = round(time.time() - t0, 1)
 
-                answer        = result["answer"]
+                answer = result["answer"]
                 source_chunks = result["source_chunks"]
-                source_pages  = result["source_pages"]
+                source_pages = result["source_pages"]
 
                 st.markdown(answer)
 
-                # Citation chips
                 if source_pages:
                     chips_html = "".join(
                         f'<span class="cite-chip">p. {p.replace("p.", "").strip()}</span>'
                         for p in source_pages
                     )
-                    st.markdown(
-                        f'<div class="cite-row">{chips_html}</div>',
-                        unsafe_allow_html=True,
-                    )
+                    st.markdown(f'<div class="cite-row">{chips_html}</div>', unsafe_allow_html=True)
 
-                # Source passages expander
                 with st.expander(f"View {len(source_chunks)} source passage(s) · {elapsed}s"):
                     for i, chunk in enumerate(source_chunks, 1):
-                        meta  = chunk.metadata
+                        meta = chunk.metadata
                         label = f"{meta.get('source','—')} · {meta.get('page_label','—')} · {meta.get('chunk_chars','?')} chars"
                         st.markdown(
                             f'<div class="source-drawer-label">Passage {i} — {label}</div>'
@@ -706,10 +574,10 @@ if prompt:
                             st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
 
                 st.session_state.messages.append({
-                    "role":         "assistant",
-                    "content":      answer,
+                    "role": "assistant",
+                    "content": answer,
                     "source_chunks": source_chunks,
-                    "source_pages":  source_pages,
+                    "source_pages": source_pages,
                 })
 
             except Exception as exc:
