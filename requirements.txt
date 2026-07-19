@@ -1,0 +1,13 @@
+# Upper bounds prevent silent breaking upgrades (e.g. langchain 0.2 → 0.3
+# changed APIs). After a working install, freeze exact pins for reproducibility:
+#   pip freeze > requirements.lock
+langchain>=0.2,<0.3
+langchain-community>=0.2,<0.3
+langchain-text-splitters>=0.2,<0.3
+langchain-groq>=0.1.6,<0.2
+langchain-huggingface>=0.0.3,<0.1
+faiss-cpu>=1.8,<2
+pypdf>=4.2,<5
+streamlit>=1.35,<2
+python-dotenv>=1.0.1,<2
+sentence-transformers>=3.0,<4
