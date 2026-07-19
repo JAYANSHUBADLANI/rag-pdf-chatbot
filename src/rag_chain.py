@@ -141,12 +141,10 @@ def _build_messages(
     history: List[Dict[str, str]],
 ) -> List[Any]:
     # Prompt caching intentionally NOT used here. The retrieved context changes
-    # with almost every question, so a cache_control breakpoint on it would pay
-    # the cache-write premium and virtually never hit; the static system prompt
-    # is well under the minimum cacheable size. If you later switch to
-    # full-document stuffing (same large context every turn), re-add
-    # {"cache_control": {"type": "ephemeral"}} on the context block; that is
-    # where caching pays off.
+    # with almost every question, so caching it would rarely hit; the static
+    # system prompt is well under the minimum cacheable size anyway. If you
+    # later switch to full-document stuffing (same large context every turn),
+    # revisit caching then, that is where it would pay off.
     history_text = _format_history_block(history)
     user_content = (
         f"DOCUMENT CONTEXT:\n{context}\n\n"

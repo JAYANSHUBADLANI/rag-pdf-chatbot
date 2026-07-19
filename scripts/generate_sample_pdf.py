@@ -49,7 +49,7 @@ PAGES = [
         "smaller, overlapping text chunks (e.g. 1000 characters with 200-character overlap). "
         "(b) Embedding: Each chunk is converted into a dense vector representation using an "
         "embedding model such as sentence-transformers/all-MiniLM-L6-v2 (384 dimensions) or "
-        "OpenAI text-embedding-3-small (1536 dimensions). "
+        "BAAI/bge-large-en (1024 dimensions). "
         "(c) Vector Store: Embeddings are stored in a vector database such as FAISS, Pinecone, "
         "or Chroma, enabling millisecond-speed approximate nearest-neighbour search at query "
         "time. "
