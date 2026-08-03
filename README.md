@@ -80,6 +80,12 @@ rag-pdf-chatbot/
 ├── scripts/
 │   └── generate_sample_pdf.py # Regenerates assets/sample.pdf
 │
+├── tests/
+│   ├── conftest.py            # Offline stand-ins: embeddings, reranker, LLMs
+│   ├── test_pdf_processor.py  # Cleaning, chunking, page labels
+│   ├── test_vectorstore.py    # Build, add, save/load roundtrip
+│   └── test_rag_chain.py      # Prompts, citations, reranking, streaming
+│
 ├── assets/
 │   ├── sample.pdf             # 8-page RAG overview, good demo doc
 │   └── screenshot.png
@@ -89,6 +95,7 @@ rag-pdf-chatbot/
 │
 ├── .env.example
 ├── .gitignore
+├── pytest.ini
 ├── requirements.txt
 └── README.md
 ```
@@ -139,6 +146,31 @@ Opens at **http://localhost:8501**.
 2. Wait a few seconds for indexing
 3. Ask questions in the chat input
 4. Expand **Sources** under any answer to see the retrieved passages
+
+---
+
+## Tests
+
+```bash
+pip install pytest
+pytest
+```
+
+51 tests covering text cleaning, chunk indexing, the FAISS save/load roundtrip,
+citation dedup across multiple PDFs, cross-encoder ordering, and the streaming
+contract (a sources event, then tokens).
+
+The suite runs offline. No Groq key, no model downloads, no network: the
+embedding model, the cross-encoder and both LLMs are swapped for deterministic
+stand-ins in `tests/conftest.py`. So a fresh clone can run `pytest` before it
+has a key, and the tests never cost an API call or fail because a hub download
+timed out.
+
+Two things are deliberately not covered: the Streamlit UI in `app.py`, and
+whether Groq actually returns a sensible answer. The first needs a browser
+driver, the second is a property of the model rather than of this code. What
+retrieval quality this stack achieves is measured separately, in the
+[evaluation framework](https://github.com/JAYANSHUBADLANI/rag-evaluation-framework).
 
 ---
 
