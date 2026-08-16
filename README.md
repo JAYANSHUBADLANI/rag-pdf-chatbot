@@ -1,5 +1,7 @@
 # DocMind: PDF Intelligence
 
+[![tests](https://github.com/JAYANSHUBADLANI/rag-pdf-chatbot/actions/workflows/tests.yml/badge.svg)](https://github.com/JAYANSHUBADLANI/rag-pdf-chatbot/actions/workflows/tests.yml)
+
 **Author:** Jayanshu Badlani
 **GitHub:** [JAYANSHUBADLANI](https://github.com/JAYANSHUBADLANI)
 **LinkedIn:** [jayanshu-badlani](https://www.linkedin.com/in/jayanshu-badlani-b77478185/)
