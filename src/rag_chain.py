@@ -1,5 +1,5 @@
-"""RAG pipeline: query rewriting (fast 8B model), retrieval, cross-encoder
-reranking, and streamed answers (Llama 3.3 70B via Groq)."""
+"""RAG pipeline: query rewriting (small fast model), retrieval, cross-encoder
+reranking, and streamed answers (gpt-oss-120b via Groq)."""
 
 import logging
 import os
@@ -17,8 +17,10 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-ANSWER_MODEL = "llama-3.3-70b-versatile"
-REWRITE_MODEL = "llama-3.1-8b-instant"
+# Groq retires models on a schedule (llama-3.3-70b-versatile and llama-3.1-8b-instant
+# were shut down on 2026-08-16), so both names can be overridden from .env.
+ANSWER_MODEL = os.getenv("GROQ_ANSWER_MODEL", "openai/gpt-oss-120b")
+REWRITE_MODEL = os.getenv("GROQ_REWRITE_MODEL", "openai/gpt-oss-20b")
 MAX_TOKENS = 1024
 TEMPERATURE = 0.2
 TOP_K_RETRIEVE = 4
@@ -66,11 +68,15 @@ def get_llm(
             "GROQ_API_KEY is not set. Copy .env.example → .env and add your key."
         )
     logger.info("Initialising LLM: %s (temp=%.1f, max_tokens=%d)", model, temperature, max_tokens)
+    # gpt-oss models reason before answering and the reasoning tokens count against
+    # max_tokens, so keep the effort low or the short rewrite budget runs out.
+    model_kwargs = {"reasoning_effort": "low"} if model.startswith("openai/gpt-oss") else {}
     return ChatGroq(
         model=model,
         temperature=temperature,
         max_tokens=max_tokens,
         api_key=api_key,
+        model_kwargs=model_kwargs,
     )
 
 

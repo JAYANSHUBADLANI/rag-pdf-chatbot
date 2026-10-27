@@ -10,7 +10,7 @@
 
 ## Overview
 
-I built this to scratch a personal itch: being able to drop any PDF (or a stack of them) and interrogate it in plain English rather than ctrl-F-ing through 80 pages. It uses Llama 3.3 70B (served free and fast via Groq) for the answers, FAISS for vector search, and local sentence-transformer embeddings (no extra API key needed for indexing).
+I built this to scratch a personal itch: being able to drop any PDF (or a stack of them) and interrogate it in plain English rather than ctrl-F-ing through 80 pages. It uses gpt-oss-120b (served free and fast via Groq) for the answers, FAISS for vector search, and local sentence-transformer embeddings (no extra API key needed for indexing).
 
 The UI is a dark-mode Streamlit app that shows the answer alongside the exact passages it retrieved, with page numbers, so you can verify the source yourself.
 
@@ -36,8 +36,8 @@ A few things I added later because the basic version got annoying to use:
 | PDF Upload | Drag-and-drop, multiple files at once |
 | Semantic Search | FAISS + sentence-transformers embeddings |
 | Reranking | Cross-encoder (`ms-marco-MiniLM-L-6-v2`) on top of vector retrieval |
-| Llama 3.3 70B LLM | Grounded, citation-aware answers, streamed token by token |
-| Conversation Memory | Follow-ups rewritten with Llama 3.1 8B before retrieval |
+| gpt-oss-120b LLM | Grounded, citation-aware answers, streamed token by token |
+| Conversation Memory | Follow-ups rewritten with gpt-oss-20b before retrieval |
 | Source Transparency | Every answer shows retrieved passages + page numbers + file name |
 | Persistent Index | FAISS saved to disk, no re-indexing on reload |
 
@@ -47,8 +47,8 @@ A few things I added later because the basic version got annoying to use:
 
 | Component | Technology |
 |-----------|-----------|
-| Answer LLM | Llama 3.3 70B Versatile (Groq) |
-| Query rewriter | Llama 3.1 8B Instant (Groq) |
+| Answer LLM | gpt-oss-120b (Groq) |
+| Query rewriter | gpt-oss-20b (Groq) |
 | Orchestration | LangChain LCEL |
 | Embeddings | `sentence-transformers/all-MiniLM-L6-v2` |
 | Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
