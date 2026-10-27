@@ -60,7 +60,9 @@ A few things I added later because the basic version got annoying to use:
 
 ## Measured retrieval quality
 
-I didn't want to just claim the two-stage retrieval works, so I evaluated this exact stack (MiniLM embeddings, 12 candidates reranked by the ms-marco cross-encoder, top 5 kept) with my [rag-evaluation-framework](https://github.com/JAYANSHUBADLANI/rag-evaluation-framework): bootstrap confidence intervals on every metric, paired permutation tests on every comparison.
+I didn't want to just claim the two-stage retrieval works, so I evaluated its two stages (the app's MiniLM embedder, then 12 candidates reranked by the ms-marco cross-encoder) with my [rag-evaluation-framework](https://github.com/JAYANSHUBADLANI/rag-evaluation-framework): bootstrap confidence intervals on every metric, paired permutation tests on every comparison.
+
+The benchmark settings differ from the app's: it uses 128-token chunks and keeps the top 5, while the app splits at 1000 characters and keeps the top 4. Answer relevance there comes from the framework's local, offline judge rather than a hosted LLM, so read the result as a measurement of the retrieval stage, not of the app's final answers.
 
 The honest headline from its 20-document / 40-question benchmark: document-level retrieval saturates (Recall@5 = 1.0 for dense retrieval with or without reranking), and the permutation test finds **no significant gain from the reranker on that corpus** (answer relevance p = 0.63). Well-separated topics simply don't need a cross-encoder. The stage stays in DocMind because real-world PDFs are the hard case it exists for, long documents where many chunks are near-duplicates and vector similarity alone ranks them poorly, and because measuring that claim is exactly what the eval framework is for. Full numbers live in the framework repo's [case study](https://github.com/JAYANSHUBADLANI/rag-evaluation-framework#case-study-measuring-a-production-retrieval-stack).
 
